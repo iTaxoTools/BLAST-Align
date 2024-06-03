@@ -5,6 +5,7 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 from tkinter import *
 from tkinter.font import Font
 #from tkinter.ttk import *
@@ -17,6 +18,21 @@ from PIL import ImageTk, Image
 from tkinter import ttk
 from tkinter.ttk import Combobox
 from tkinter import filedialog
+
+def get_blast_env() -> dict:
+    here = Path(__file__).parent
+    bin = here / "bin"
+    env = os.environ.copy()
+    env["PATH"] += f";{bin}"
+    return env
+BLAST_ENV = get_blast_env()
+
+def get_itaxotools_logo() -> str:
+    here = Path(__file__).parent
+    logo = "iTaxoTools Digital linneaeus MICROLOGO.png"
+    path = Path(here / logo)
+    return str(path)
+LOGO = get_itaxotools_logo()
 
 def start_processing():
     if run_blast_var.get() == 1:
@@ -44,7 +60,7 @@ def make_db_button_cmd():
         n = database_name.get()
         p = subprocess.Popen(
             "makeblastdb -parse_seqids -in " + fndb + " -dbtype " + t + " -title " + n + " -out " + n,
-            shell=True, stdout=subprocess.PIPE)
+            shell=True, stdout=subprocess.PIPE, env=BLAST_ENV)
         p.wait()
         out = p.stdout.readlines()
         if p.returncode == 0:
@@ -545,7 +561,7 @@ def museoscript_parse(blast_out,museo_out,pident_thr):
             header = f'>{splitti[0]}_{splitti[1]}_{pident}\n'
             museo.write(header)
             museo.write(sequence_line)
-            
+
 
 #    for header, sequence in zip(dict_head_pident.keys(), dict_head_seq.values()):
 #        outfile.write(f'{header}_pident_{dict_head_pident[header]}\n{sequence}')
@@ -579,7 +595,7 @@ def star(type=None,query=None):
     print("Other cmd", other.get())
     db = str(select_db.get().rsplit('.',1)[0])
     #db = "/home/nkulikov/Downloads/BlastGUI-master/BlastGUI/db/mala"
-    # remove gaps 
+    # remove gaps
     input_file = str(select_query.get())
     file_name, file_extension = input_file.rsplit('.', 1)
     temporary_file  = file_name + "_tmp." + file_extension
@@ -591,10 +607,10 @@ def star(type=None,query=None):
 
     command = (
         f"{blast_type.get()} -out {output_file_blast} -query {temporary_file} "
-        f"-evalue {evalue.get()} -db {db} -num_threads {threads.get()} -outfmt '{outfmt.get()} {other.get()}'"
+        f"-evalue {evalue.get()} -db {db} -num_threads {threads.get()} -outfmt {outfmt.get()} {other.get()}"
     )
 
-    b = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE)
+    b = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, env=BLAST_ENV)
     b.wait()
 
     if b.returncode == 0:
@@ -638,7 +654,7 @@ def loop_blast():
       b = subprocess.Popen(
           f"{blast_type2.get()} -out {output_file} -query {temporary_file} -outfmt '{int(6)} length pident qseqid sseqid sseq qframe sframe' "
           f"-evalue {evalue2.get()} -db {db} -num_threads {int(threads2.get())}",
-          shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+          shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=BLAST_ENV)
 
       b.wait()
       # Capture the stdout and stderr
@@ -700,7 +716,7 @@ def loop_blast():
             b=subprocess.Popen(
                     f"{blast_type2.get()} -out {output_file} -query {temporary_file} -outfmt '{int(6)} length pident qseqid sseqid sseq qframe sframe' "
                     f"-evalue {evalue2.get()} -db {select_db2.get()} -num_threads {int(threads2.get())}",
-                    shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                    shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=BLAST_ENV)
 
             b.wait()
             # Capture the stdout and stderr
@@ -887,7 +903,7 @@ run_batch_checkbox3 = create_checkbox(fourth_frame, "Build BLAST database", 0, 0
 
 ### Title Frame ###
 banner_frame = LabelFrame(top,bg="#f0f0f0")
-banner_img = ImageTk.PhotoImage(Image.open("iTaxoTools Digital linneaeus MICROLOGO.png"))
+banner_img = ImageTk.PhotoImage(Image.open(LOGO))
 
 
 my_image_label = Label(banner_frame, image=banner_img).grid(row=0, column=0, rowspan=3, sticky="nsew")
